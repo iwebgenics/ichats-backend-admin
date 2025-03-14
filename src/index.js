@@ -13,7 +13,7 @@ import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 import { app, server } from "./lib/socket.js"; // ✅ Importing app and server from socket.js
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5005;
 const __dirname = path.resolve();
 
 
