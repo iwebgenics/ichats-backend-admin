@@ -85,10 +85,8 @@ export const signup = async (req, res) => {
 //   }
 // };
 
-
 export const login = async (req, res) => {
   const { email, password } = req.body;
-
   try {
     const user = await User.findOne({ email });
 
@@ -96,9 +94,9 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Prevent admin from logging in
-    if (user.role === "admin") {
-      return res.status(403).json({ message: "Access denied for admin users" });
+    // Prevent non-admin users from logging in
+    if (!user.role || user.role.trim().toLowerCase() !== "admin") {
+      return res.status(403).json({ message: "Access denied. Admins only." });
     }
 
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
@@ -106,19 +104,23 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Generate token (optional)
+    // Generate token (assumes generateToken sets a cookie or similar)
     generateToken(user._id, res);
 
-    // Return basic user info
+    // Return admin info
     res.status(200).json({
       _id: user._id,
+      fullName: user.fullName,
       email: user.email,
+      profilePic: user.profilePic,
+      role: user.role, // Guaranteed to be "admin"
     });
   } catch (error) {
     console.error("Error in login controller:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 
 
@@ -141,7 +143,7 @@ export const logout = async (req, res) => {
 
     messagesToDelete.forEach((msg) => {
       console.log("Processing message ID:", msg._id, "image:", msg.image, "file:", msg.file);
-      
+
       if (msg.image) {
         try {
           const filename = msg.image.split("/").pop();
