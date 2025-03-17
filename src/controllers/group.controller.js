@@ -4,41 +4,42 @@ export const addGroup = async (req, res) => {
   try {
     const { groupName, members } = req.body;
     
-    // Validate that groupName is provided and members is a non-empty array.
-    if (!groupName || !members || !Array.isArray(members) || members.length === 0) {
-      return res.status(400).json({ message: "Group name and at least one member are required" });
+    if (!groupName) {
+      return res.status(400).json({ message: "Group name is required" });
     }
-
-    // Check if any member is already part of any group.
-    const duplicateMembers = [];
-    // Loop through each member to see if they're already in a group.
-    await Promise.all(
-      members.map(async (memberId) => {
-        const existingGroup = await Group.findOne({ members: memberId });
-        if (existingGroup) {
-          duplicateMembers.push(memberId);
-        }
-      })
-    );
-
-    // If any duplicate members are found, return an error.
-    if (duplicateMembers.length > 0) {
-      return res.status(400).json({ 
-        message: "Some members already belong to a group. Please remove them from the selection.", 
-        duplicateMembers 
-      });
+    
+    // Allow members to be optional; default to empty array if not provided
+    const groupMembers = Array.isArray(members) ? members : [];
+    
+    // If members are provided, check for duplicates (optional step)
+    if (groupMembers.length > 0) {
+      const duplicateMembers = [];
+      await Promise.all(
+        groupMembers.map(async (memberId) => {
+          const existingGroup = await Group.findOne({ members: memberId });
+          if (existingGroup) {
+            duplicateMembers.push(memberId);
+          }
+        })
+      );
+      if (duplicateMembers.length > 0) {
+        return res.status(400).json({ 
+          message: "Some members already belong to a group. Please remove them from the selection.", 
+          duplicateMembers 
+        });
+      }
     }
-
-    // Create and save the new group if no duplicates found.
-    const newGroup = new Group({ groupName, members });
+    
+    // Create the group with the provided name and (possibly empty) members array
+    const newGroup = new Group({ groupName, members: groupMembers });
     await newGroup.save();
-
     res.status(201).json(newGroup);
   } catch (error) {
     console.error("Error adding group:", error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 export const updateGroupMembers = async (req, res) => {
     try {

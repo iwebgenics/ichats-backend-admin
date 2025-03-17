@@ -8,5 +8,7 @@ const router = express.Router();
 // It will return users filtered by role if the "role" query parameter is provided.
 // For example, GET /api/users?role=user returns only users with role "user".
 router.get("/", getAllUsersByRole);
+router.delete("/:id", protectRoute, deleteUser);
+
 
 export default router;
